@@ -2,16 +2,42 @@ version: 2.1
 orbs:
   anchore: anchore/anchore-engine@1.1.0
 jobs:
+  build_image:
+    docker:
+      - image: docker:stable-git
+    - setup_remote_docker:
+        docker_layer_caching: true
+    - checkout
+    - run:
+        name: build container
+        command: docker build -t ${CIRCLE_PROJECT_REPONAME}:ci .
+    - run:
+          name: Save Docker image
+          command: |
+            rm -rf /home/circleci/workspace/docker/
+            mkdir /home/circleci/workspace/docker/ -p
+            docker save -o /home/circleci/workspace/docker/${CIRCLE_PROJECT_REPONAME}-ci.tar ${CIRCLE_PROJECT_REPONAME}:ci
+      - persist_to_workspace:
+          root: /home/circleci/workspace/
+          paths:
+            - docker/*
+
   local_image_scan:
     executor: anchore/anchore_engine
     steps:
-      - checkout
+      - attach_workspace:
+          at: /home/circleci/workspace/
       - run:
-          name: build container
-          command: docker build -t ${CIRCLE_PROJECT_REPONAME}:ci .
+          name: Load Docker image layer cache
+          command: |
+            docker load -i /home/circleci/workspace/docker/${CIRCLE_PROJECT_REPONAME}-ci.tar
       - anchore/analyze_local_image:
           image_name: ${CIRCLE_PROJECT_REPONAME}:ci
+
 workflows:
   scan_image:
     jobs:
-      - local_image_scan
+      - build_image
+      - local_image_scan:
+          requires:
+            - build_image
