@@ -1,11 +1,12 @@
-FROM node:8-alpine
-RUN mkdir /app
-WORKDIR /app
-COPY . .
-RUN npm install
+FROM node@sha256:899febf5a7af3bec94e9a67244087db218a42d55e748d9504b00019705bd3a18
 
-USER node:node
+RUN mkdir -p /home/node/ && apt-get -y install curl
+COPY ./app/ /home/node/app/
 
-EXPOSE 8000
+# DEV NOTE: remember to re-enable healthcheck and remove debugging port 22 before final push!
 
-ENTRYPOINT ["node", "/app/index.js"]
+HEALTHCHECK CMD curl --fail http://localhost:8081/ || exit 1
+EXPOSE 8081
+
+USER node
+CMD node /home/node/app/server.js
