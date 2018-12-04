@@ -13,15 +13,15 @@ jobs:
           name: build container
           command: docker build -t ${CIRCLE_PROJECT_REPONAME}:ci .
       - run:
-            name: Save Docker image
-            command: |
-              rm -rf /home/circleci/workspace/docker/
-              mkdir /home/circleci/workspace/docker/ -p
-              docker save -o /home/circleci/workspace/docker/${CIRCLE_PROJECT_REPONAME}-ci.tar ${CIRCLE_PROJECT_REPONAME}:ci
-        - persist_to_workspace:
-            root: /home/circleci/workspace/
-            paths:
-              - docker/*
+          name: Save Docker image
+          command: |
+            rm -rf /home/circleci/workspace/docker/
+            mkdir /home/circleci/workspace/docker/ -p
+            docker save -o /home/circleci/workspace/docker/${CIRCLE_PROJECT_REPONAME}-ci.tar ${CIRCLE_PROJECT_REPONAME}:ci
+      - persist_to_workspace:
+          root: /home/circleci/workspace/
+          paths:
+            - docker/*
 
   local_image_scan:
     executor: anchore/anchore_engine
